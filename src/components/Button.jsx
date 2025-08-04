@@ -1,9 +1,15 @@
 import React from "react";
 
-function button({text, onClick}) {
+function Button({text, onClick, type}) {
     return (
-        <button styles={{backgroundColor: "blue", borderRadius: 100, padding: 16}} onClick={onClick}>{text}</button>
+        <button 
+            type={type}
+            style={{backgroundColor: "blue", borderRadius: 100, padding: 16}} 
+            onClick={onClick}
+        >
+            {text}
+        </button>
     )
 }
 
-export default button;
+export default Button;
