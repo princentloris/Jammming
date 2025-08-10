@@ -29,6 +29,7 @@ function App() {
     console.log(`Saving playlist: ${playlistName}`, playlist);
     // For now, just log the playlist data
     // In a real app, you'd call your Spotify API here
+    setPlaylist([]);
   };
 
   return (
