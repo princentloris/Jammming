@@ -14,6 +14,7 @@ function Tracklist({ tracks, onAction, icon = "+" }) {
                         artist={track.artist}
                         icon={icon}
                         onClick={() => onAction(track)}
+                        uri={track.uri}
                     />
                 ))}
             </div>

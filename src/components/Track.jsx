@@ -1,6 +1,6 @@
 import React from "react";
 
-function Track({songTitle, artist, onClick, icon}) {
+function Track({uri, songTitle, artist, onClick, icon}) {
 
     return (
         <div style={{display:"flex", flexDirection:"row"}}>
