@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Track from "./Track.jsx";
 import Button from "./Button.jsx";
+import Tracklist from "./Tracklist.jsx";
 
 function Playlist({ tracks, onRemove, onSave }) {
     const [playlistName, setPlaylistName] = useState("");
@@ -19,19 +20,7 @@ function Playlist({ tracks, onRemove, onSave }) {
                 value={playlistName}
                 onChange={(e) => setPlaylistName(e.target.value)}
             />
-                <div id="songsAdded" style={{display: "flex", flexDirection:"column", gap: 8}} > {
-                    tracks.map(track => (
-                        <Track 
-                            key={track.id}
-                            songTitle={track.title}
-                            artist={track.artist}
-                            icon="-"
-                            onClick={() => onRemove(track)}
-                        />
-                        )
-                    )
-                }
-                </div>
+            <Tracklist tracks={tracks} onAction={onRemove} icon="-"/>
             <Button text="Save to Spotify" type="submit" />
         </form>
     )
