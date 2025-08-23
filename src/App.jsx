@@ -21,9 +21,6 @@ function App() {
   useEffect(() => {
     const checkLoginStatus = () => {
       const loggedIn = isLoggedIn();
-      console.log('🔍 Checking login status:', loggedIn);
-      console.log('🔍 Local storage token:', localStorage.getItem('spotify_access_token'));
-      console.log('🔍 Local storage expiration:', localStorage.getItem('spotify_expiration_date'));
       setLoginStatus(loggedIn);
     };
 
@@ -34,7 +31,6 @@ function App() {
     const handleCallback = async () => {
       const token = await handleSpotifyCallback();
       if (token) {
-        console.log('✅ Got token from callback, updating login status');
         checkLoginStatus();
       }
     };
@@ -96,29 +92,33 @@ function App() {
   };
 
   return (
-    <div className="App" style={{display: 'flex', flexDirection: 'column'}}>
-
-      
+    <div className="App">
       {!loginStatus ? (
         // Login screen
-        <div style={{
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          minHeight: '100vh',
-          textAlign: 'center'
-        }}>
-          <h1 style={{marginBottom: '2rem', fontSize: '3rem', color: '#1DB954'}}>Welcome to Jammming</h1>
-
-          <Button text="Login with Spotify" onClick={loginWithSpotify} type="button" />
+        <div className="login-screen">
+          <h1 className="login-title">Welcome to Jammming</h1>
+          <p className="login-subtitle">
+            Create and manage your Spotify playlists with ease. Search for tracks, build your perfect playlist, and save it directly to your Spotify account.
+          </p>
+          <Button 
+            text="Login with Spotify" 
+            onClick={loginWithSpotify} 
+            variant="primary"
+            size="large"
+          />
         </div>
       ) : (
         // Main app interface
         <>
+          <div className="app-header">
+            <h1 className="app-title">Jammming</h1>
+            <p className="app-subtitle">Build your perfect playlist</p>
+          </div>
+          
           <SearchBar onSearch={handleSearchTracks} />
-          <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
-            <Tracklist tracks={tracks} onAction={handleAddTrack} title="Results" />
+          
+          <div className="app-content">
+            <Tracklist tracks={tracks} onAction={handleAddTrack} title="Search Results" />
             <Playlist tracks={playlist} onRemove={handleRemoveTrack} onSave={handleSavePlaylist} />
           </div>
         </>
