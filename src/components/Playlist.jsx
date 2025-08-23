@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Track from "./Track.jsx";
 import Button from "./Button.jsx";
 import Tracklist from "./Tracklist.jsx";
 
@@ -20,7 +19,7 @@ function Playlist({ tracks, onRemove, onSave }) {
                 value={playlistName}
                 onChange={(e) => setPlaylistName(e.target.value)}
             />
-            <Tracklist tracks={tracks} onAction={onRemove} icon="-"/>
+            <Tracklist tracks={tracks} onAction={onRemove} icon="-" title=""/>
             <Button text="Save to Spotify" type="submit" />
         </form>
     )
