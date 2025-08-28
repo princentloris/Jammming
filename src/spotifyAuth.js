@@ -7,14 +7,16 @@ const SPOTIFY_CONFIG = {
 
 // What permissions does your app need?
 const SCOPES = [
-    'playlist-modify-private'  // Create and modify private playlists
+    'playlist-modify-private',  // Create and modify private playlists
+    'user-read-playback-state', // Read playback state
+    'user-modify-playback-state' // Modify playback state
   ];
 
 export const loginWithSpotify = () => {
-    const url = `${SPOTIFY_CONFIG.AUTH_ENDPOINT}?client_id=${SPOTIFY_CONFIG.CLIENT_ID}&scope=${SCOPES[0]}&redirect_uri=${encodeURIComponent(SPOTIFY_CONFIG.REDIRECT_URI)}&response_type=code`;
-    window.location.href = url;
+  const scopesString = SCOPES.join(' ');
+  const url = `${SPOTIFY_CONFIG.AUTH_ENDPOINT}?client_id=${SPOTIFY_CONFIG.CLIENT_ID}&scope=${encodeURIComponent(scopesString)}&redirect_uri=${encodeURIComponent(SPOTIFY_CONFIG.REDIRECT_URI)}&response_type=code`;
+  window.location.href = url;
 };
-
 
 export const exchangeCodeforToken = async (authorizationCode) => {
     try {
@@ -50,45 +52,86 @@ export const exchangeCodeforToken = async (authorizationCode) => {
     }
 };
 
+// Add this at the top of your file, outside any function
+let isProcessingAuth = false;
+
 export const handleSpotifyCallback = async () => {
-    try {
-      // Check if we have a code in the URL
-      if (window.location.search.includes('code=')) {
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
+  try {
+    // Prevent multiple simultaneous auth processing
+    if (isProcessingAuth) {
+      console.log('⚠️ Auth already in progress, skipping...');
+      return null;
+    }
+    
+    // Check if we have a code in the URL
+    if (window.location.search.includes('code=')) {
+      console.log('�� Authorization code found in URL, processing...');
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      
+      if (code) {
+        console.log('✅ Authorization code extracted:', code.substring(0, 10) + '...');
         
-        if (code) {
-          
-          // Check if we've already processed this code
-          const processedCode = sessionStorage.getItem('processed_auth_code');
-          if (processedCode === code) {
-            return null;
-          }
-          
+        // Check if we've already processed this code
+        const processedCode = sessionStorage.getItem('processed_auth_code');
+        console.log('🔍 Previously processed code:', processedCode);
+        console.log('🔍 Current code:', code);
+        console.log('🔍 Are they equal?', processedCode === code);
+        
+        if (processedCode === code) {
+          console.log('⚠️ Code already processed, clearing URL...');
+          // Clear the URL since we've already processed this code
+          window.history.replaceState({}, document.title, window.location.pathname);
+          return null;
+        }
+        
+        // Set the flag to prevent multiple simultaneous processing
+        isProcessingAuth = true;
+        
+        try {
+          console.log('🔄 Exchanging code for token...');
           const token = await exchangeCodeforToken(code);
           
           if (token) {
+            console.log('✅ Token exchange successful!');
             // Mark this code as processed
             sessionStorage.setItem('processed_auth_code', code);
+            
+            // Clear the authorization code from URL after successful exchange
+            window.history.replaceState({}, document.title, window.location.pathname);
+            console.log('🧹 URL cleared successfully');
+            
             return token;
           } else {
             console.error('❌ Token exchange failed - no token returned');
+            // Clear the URL even on failure to prevent retry attempts
+            window.history.replaceState({}, document.title, window.location.pathname);
             return null;
           }
-        } else {
-          console.error('❌ No authorization code found in URL params');
-          return null;
+        } finally {
+          // Always reset the flag, whether success or failure
+          isProcessingAuth = false;
         }
       } else {
-        console.log('❌ No authorization code found in URL');
+        console.error('❌ No authorization code found in URL params');
         return null;
       }
-      
-    } catch (error) {
-      console.error('❌ Error in handleSpotifyCallback:', error);
-      return null; // Return null instead of throwing error
+    } else {
+      console.log('ℹ️ No authorization code found in URL');
+      return null;
     }
-  };
+    
+  } catch (error) {
+    console.error('❌ Error in handleSpotifyCallback:', error);
+    // Clear the URL on error to prevent retry attempts
+    if (window.location.search.includes('code=')) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    // Reset the flag on error
+    isProcessingAuth = false;
+    return null;
+  }
+};
 
 
 export const isLoggedIn = () => {
@@ -216,3 +259,117 @@ export const isLoggedIn = () => {
       return null;
     };
   };
+
+
+export const getWebPlayerDevice = async () => {
+  try {
+    const token = localStorage.getItem('spotify_access_token');
+    console.log('🔍 Getting devices with token:', token ? 'Present' : 'Missing');
+    
+    // First, let's check what user info we can get
+    const userResponse = await fetch('https://api.spotify.com/v1/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (userResponse.ok) {
+      const userData = await userResponse.json();
+      console.log('👤 User data:', userData);
+    }
+    
+    const response = await fetch('https://api.spotify.com/v1/me/player/devices', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    console.log('📱 Devices response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Failed to get devices:', response.status, errorText);
+      throw new Error(`Failed to get devices: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('📱 All devices:', data.devices);
+    
+    const webPlayer = data.devices.find(device => device.type === 'Web Player');
+    console.log('🌐 Web Player device found:', webPlayer);
+    
+    return webPlayer?.id || null;
+  } catch (error) {
+    console.error('❌ Error getting devices:', error);
+    return null;
+  }
+};
+
+
+  export const playTrack = async (trackUri) => {
+    try {
+      const token = localStorage.getItem('spotify_access_token');
+
+      if (!token) {
+        throw new Error('No access token found');
+      }
+
+      const deviceId = await getWebPlayerDevice();
+
+      const body = {
+        uris: [trackUri]
+      }
+
+      if (deviceId) {
+        body.device_id = deviceId;
+      }
+
+      const response = await fetch(`https://api.spotify.com/v1/me/player/play`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to play track: ${response.status}`);
+      }
+
+      return true;
+    } catch (error) {
+    console.log ("❌ Error playing track:", error);
+    return false;
+  }
+};
+
+export const pauseTrack = async () => {
+  try {
+    const token = localStorage.getItem('spotify_access_token');
+
+    if (!token) {
+      throw new Error('No access token found');
+    }
+
+    const deviceId = await getWebPlayerDevice();
+
+    const response = await fetch(`https://api.spotify.com/v1/me/player/pause`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: deviceId ? JSON.stringify({ device_id: deviceId }) : undefined
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to pause track: ${response.status}`);
+    }
+
+    return true;
+  } catch (error) {
+    console.log("❌ Error pausing track:", error);
+    return false;
+  }
+};

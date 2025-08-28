@@ -28,8 +28,9 @@ function Tracklist({ tracks, onAction, icon = "+", title = "Results" }) {
                             songTitle={track.title}
                             artist={track.artist}
                             icon={icon}
-                            onClick={() => onAction(track)}
+                            onAddClick={() => onAction(track)}
                             uri={track.uri}
+                            onPlayClick={() => onPlayClick(track.uri)}
                         />
                     ))
                 )}

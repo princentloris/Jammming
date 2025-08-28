@@ -27,8 +27,9 @@ function App() {
     // Check initial login status
     checkLoginStatus();
 
-    // Handle Spotify callback if user is returning from auth
-    const handleCallback = async () => {
+    // Only handle Spotify callback if user is not already logged in
+    if (!isLoggedIn()) {
+      const handleCallback = async () => {
       const token = await handleSpotifyCallback();
       if (token) {
         checkLoginStatus();
@@ -36,7 +37,9 @@ function App() {
     };
 
     handleCallback();
+  }
   }, []);
+  
 
   const handleSearchTracks = async (query) => {
     if (!loginStatus) {
