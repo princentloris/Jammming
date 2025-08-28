@@ -66,3 +66,21 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+.play-button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  outline: none;
+}
+
+.play-button:hover {
+  background-color: rgba(29, 185, 84, 0.1);
+}
+
+.play-button:focus {
+  outline: none;
+}

@@ -29,8 +29,11 @@ app.post('/exchange-code', async (req, res) => {
         const { code } = req.body;
         
         if (!code) {
+            console.error('❌ No authorization code provided in request');
             return res.status(400).json({ error: 'No authorization code provided' });
         }
+        
+        console.log('🔄 Processing authorization code:', code.substring(0, 10) + '...');
         
         // Make actual request to Spotify's token endpoint
         const response = await fetch('https://accounts.spotify.com/api/token', {
@@ -49,17 +52,18 @@ app.post('/exchange-code', async (req, res) => {
         const data = await response.json();
         
         if (data.access_token) {
+            console.log('✅ Token exchange successful');
             res.json({
                 access_token: data.access_token,
                 expires_in: data.expires_in
             });
         } else {
-            console.error('Spotify error:', data);
+            console.error('❌ Spotify error:', data);
             res.status(400).json({ error: 'Failed to get token from Spotify', details: data });
         }
         
     } catch (error) {
-        console.error('Error in /exchange-code route:', error);
+        console.error('❌ Error in /exchange-code route:', error);
         res.status(500).json({ error: 'Something went wrong', details: error.message });
     }
 });
